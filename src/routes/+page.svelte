@@ -1,18 +1,15 @@
 <script>
-  import { invoke } from "@tauri-apps/api/core";
-  import { mkdir, BaseDirectory } from '@tauri-apps/plugin-fs';
+    import { invoke } from "@tauri-apps/api/core";
+  import { resolve } from "shared/file-resolve";
 
   let name = $state("");
-  let greetMsg = $state("");
+  let message = $state("");
+  let increment = 1;
 
-  async function greet(event) {
-    event.preventDefault();
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    greetMsg = await invoke("greet", { name });
-  }
-  async function grunkle(event) {
-    greetMsg = "AAJSKLJFA;LKS"
-    await mkdir("oh-fuck-oh-no", { baseDir : "./" })
+  async function go() {
+    const content = await resolve("resources/player-b.txt");
+
+    await invoke("update", { message : `Test:" ${increment++}`});
   }
 </script>
 
@@ -20,15 +17,15 @@
   <h1>Welcome to Tauri + Svelte</h1>
 
   <div class="row">
-    <button onclick={grunkle}>DO A FILaefsdE THING</button>
+    <button onclick={() => go()}>DO A FILaefsdE THING</button>
   </div>
   <p>Click on the Tauri, Vite, and SvelteKit logos to learn more.</p>
 
-  <form class="row" onsubmit={greet}>
+  <form class="row" onsubmit={go}>
     <input id="greet-input" placeholder="Enter a name..." bind:value={name} />
     <button type="submit">Greet</button>
   </form>
-  <p>{greetMsg}</p>
+  <p>{message}</p>
 </main>
 
 <style>

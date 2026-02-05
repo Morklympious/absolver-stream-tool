@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "absolver-tournament-tool",
-        "width": 800,
-        "height": 600
+        "title": "Absolver Tournament Tool",
+        "width": 1600,
+        "height": 900,
+        "resizable": true
       }
     ],
     "security": {
@@ -30,6 +31,9 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "resources" : [
+      "resources/"
     ]
   }
 }
