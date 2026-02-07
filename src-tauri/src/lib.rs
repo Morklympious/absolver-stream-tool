@@ -1,4 +1,4 @@
-
+mod server;
 use serde::{Deserialize, Serialize};
 use std::{sync::Arc};
 use tokio::sync::{Mutex, broadcast};
@@ -54,7 +54,6 @@ async fn update(message: String, state: tauri::State<'_, ApplicationState>) -> R
 
   Ok(())
 }
-
 
 async fn websockify(    
     channel: broadcast::Sender<DisplayData>,
@@ -160,11 +159,20 @@ pub fn run() {
             data: _data.clone()
         })
         .setup(move |_application| {
-              println!("🎯 Starting WebSocket server...");
+            println!("🎯 Starting WebSocket server...");
             
             tauri::async_runtime::spawn(async move {
                 websockify(_channel, _data).await;
             });
+
+            // Start HTTP server (only in production)
+            #[cfg(not(debug_assertions))]
+            {
+                tauri::async_runtime::spawn(async move {
+                    server::serve().await;  // ← Add this!
+                });
+                 println!("🎯 Starting HTTP server...");
+            }
 
             Ok(())
         })
