@@ -17,15 +17,13 @@
   <h1>Welcome to Tauri + Svelte</h1>
 
   <div class="row">
-    <button onclick={() => go()}>DO A FILaefsdE THING</button>
+    <button onclick={() => go()}>Player One ++</button>
+    <button onclick={() => go()}>Player One --</button>
+    <button onclick={() => go()}>Player Two ++</button>
+    <button onclick={() => go()}>Player Two --</button>
   </div>
   <p>Click on the Tauri, Vite, and SvelteKit logos to learn more.</p>
 
-  <form class="row" onsubmit={go}>
-    <input id="greet-input" placeholder="Enter a name..." bind:value={name} />
-    <button type="submit">Greet</button>
-  </form>
-  <p>{message}</p>
 </main>
 
 <style>
