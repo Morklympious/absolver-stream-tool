@@ -5,11 +5,18 @@
   let name = $state("");
   let message = $state("");
   let increment = 1;
+  let player = $state("");
 
   async function go() {
     const content = await resolve("resources/player-b.txt");
 
-    await invoke("update", { message : `Test:" ${increment++}`});
+    await invoke('update', { 
+       data: {
+            player1: { name : "Test", score: 0, style: "forsaken" },
+            player2: { name: "Opponent", score: 0, style: "windfall" },
+            bestOf: 3
+        }
+    });
   }
 </script>
 
@@ -22,7 +29,6 @@
     <button onclick={() => go()}>Player Two ++</button>
     <button onclick={() => go()}>Player Two --</button>
   </div>
-  <p>Click on the Tauri, Vite, and SvelteKit logos to learn more.</p>
 
 </main>
 

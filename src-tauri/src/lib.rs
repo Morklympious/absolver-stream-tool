@@ -17,14 +17,46 @@ fn grunkle(name: &str) -> String {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+enum CombatStyle {
+    Forsaken,
+    Windfall,
+    Kahlt,
+    Faejin,
+    Stagger,
+    None,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Player {
+    name: String,
+    score: u8,
+    style: CombatStyle
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct DisplayData {
-    message : String,
+    player1: Player,
+    player2: Player,
+    best_of: u8,
 }
 
 impl Default for DisplayData {
     fn default() -> Self {
         Self {
-            message: "Websocket says hello!".to_string()
+            player1: Player {
+                name: "Player 1".to_string(),
+                score: 0,
+                style: CombatStyle::Forsaken,
+            },
+            player2: Player {
+                name: "Player 2".to_string(),
+                score: 0,
+                style: CombatStyle::Windfall,
+            },
+            best_of: 3,
         }
     }
 }
@@ -36,23 +68,21 @@ struct ApplicationState {
 
 // remember to call `.manage(MyState::default())`
 #[tauri::command]
-async fn update(message: String, state: tauri::State<'_, ApplicationState>) -> Result<(), String> {
-  println!("Updating display data! {}", message);
+async fn update(data: DisplayData, state: tauri::State<'_, ApplicationState>) -> Result<(), String> {
+  println!("Updating display data! {:?}", data);
 
-  let data = DisplayData { message };
+    { 
+        let mut payload = state.data.lock().await;
+        *payload = data.clone();
+    }
 
-  { 
-    let mut payload = state.data.lock().await;
-    *payload = data.clone();
-  }
+    // Well this is... fun.
+    state
+        .channel
+        .send(data)
+        .map_err(|e| format!("Failed to broadcast: {}", e))?;
 
-  // Well this is... fun.
-  state
-    .channel
-    .send(data)
-    .map_err(|e| format!("Failed to broadcast: {}", e))?;
-
-  Ok(())
+    Ok(())
 }
 
 async fn websockify(    
@@ -166,13 +196,12 @@ pub fn run() {
             });
 
             // Start HTTP server (only in production)
-            #[cfg(not(debug_assertions))]
-            {
-                tauri::async_runtime::spawn(async move {
-                    server::serve().await;  // ← Add this!
-                });
-                 println!("🎯 Starting HTTP server...");
-            }
+
+            tauri::async_runtime::spawn(async move {
+                server::serve().await;  // ← Add this!
+            });
+            println!("🎯 Starting HTTP server...");
+    
 
             Ok(())
         })

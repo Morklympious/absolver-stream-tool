@@ -1,15 +1,14 @@
 use axum::{
     Router,
-    routing::get_service,
 };
 
-use tower_http::services::{ServeDir, ServeFile}
+use tower_http::services::{ServeDir, ServeFile};
 use std::net::SocketAddr;
 
 pub async fn serve() {
-    let build = "./build";
+    let build = concat!(env!("CARGO_MANIFEST_DIR"), "/../build");
     let serve = ServeDir::new(build)
-        .not_found_service(ServeFile::new(format!("{}/index./html", build)));
+        .not_found_service(ServeFile::new(format!("{}/index.html", build)));
 
     let router = Router::new()
         .nest_service("/", serve);
