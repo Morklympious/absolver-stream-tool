@@ -1,46 +1,87 @@
 <script>
-    import { invoke } from "@tauri-apps/api/core";
-  import { resolve } from "shared/file-resolve";
+  // @ts-nocheck
+  import debounce from "debounce";
+  import { browser } from "$app/environment";
+  import { invoke } from "@tauri-apps/api/core";
+  import { store, update, updatePlayer } from "shared/match-data.svelte";
+  import operations from "shared/operations";
+  import { socket } from "shared/socket";
+  import { onMount } from "svelte";
+  import { get } from "svelte/store";
 
-  let name = $state("");
-  let message = $state("");
-  let increment = 1;
-  let player = $state("");
 
-  async function go() {
-    const content = await resolve("resources/player-b.txt");
+  let one;
+  let two;
+  let websocket;
 
-    await invoke('update', { 
-       data: {
-            player1: { name : "Test", score: 0, style: "forsaken" },
-            player2: { name: "Opponent", score: 0, style: "windfall" },
-            bestOf: 3
-        }
-    });
+  /**
+   * There are three moving parts to this. 
+   * 1. We have the "authority" layer, which holds the state of match data
+   * this includes player's names, their score count, their absolver style, etc. 
+   * This comes down to us through a websocket that the application has set up.
+   * 2. There's a local "copy" of the authority layer's state. And the local copy updates
+   * when the authority layer updates its state. 
+   * 3. Any call to update the data has to be made through the authority layer. 
+  */
+
+  onMount(() => {
+    websocket = new WebSocket("ws://localhost:9001");
+
+    websocket.onmessage = (message) => {
+      console.log("we're updating, you fuck", { data : message.data });
+      update(JSON.parse(message.data));
+    };
+
+  });
+
+  /** Update the stored data by calling into Rust */
+  const refresh = async (updated) => {    
+    await invoke("update", { data : $store })
   }
+
+  const chungify = () => {
+    const chungus = "CHUNGUSS";
+    const current = get(store);
+
+    current.player1.name = chungus;
+
+    update(current);
+    refresh(current);
+  }
+
+  const write = (index, name) => {
+    console.log("updating name", { index, name })
+    operations.update.name(store, index, name);
+    refresh(get(store));
+  }
+
 </script>
 
 <main class="container">
   <h1>Welcome to Tauri + Svelte</h1>
 
   <div class="row">
-    <button onclick={() => go()}>Player One ++</button>
-    <button onclick={() => go()}>Player One --</button>
-    <button onclick={() => go()}>Player Two ++</button>
-    <button onclick={() => go()}>Player Two --</button>
+    <h1> Player One: </h1>
+    <input bind:value={one} oninput={debounce(() => write(0, one), 400)} />
+  </div>
+
+  <div class="row">
+    <h1> Player Two: </h1>
+    <input bind:value={two} oninput={debounce(() => write(1, two), 400)} />
+  </div>
+
+
+  <div>
+    <h1> The whole fuckin' thing brother: </h1>
+    <div class="massive">{JSON.stringify($store)}</div>
   </div>
 
 </main>
 
 <style>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
+.massive { 
+  font-size: 2rem;
 }
-
-.logo.svelte-kit:hover {
-  filter: drop-shadow(0 0 2em #ff3e00);
-}
-
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -66,37 +107,6 @@
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  text-align: center;
-}
-
-input,
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -122,13 +132,8 @@ button:active {
   background-color: #e8e8e8;
 }
 
-input,
 button {
   outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -137,11 +142,6 @@ button {
     background-color: #2f2f2f;
   }
 
-  a:hover {
-    color: #24c8db;
-  }
-
-  input,
   button {
     color: #ffffff;
     background-color: #0f0f0f98;
